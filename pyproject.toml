@@ -23,7 +23,8 @@ dependencies = [
     "notebook (>=7.5.0,<8.0.0)",
     "pandoc (>=2.4,<3.0)",
     "tdqm (>=0.0.1,<0.0.2)",
-    "imblearn (>=0.0,<0.1)"
+    "imblearn (>=0.0,<0.1)",
+    "pydotplus (>=2.0.2,<3.0.0)"
 ]
 
 
