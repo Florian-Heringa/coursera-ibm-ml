@@ -27,7 +27,8 @@ dependencies = [
     "pydotplus (>=2.0.2,<3.0.0)",
     "xgboost (>=3.1.2,<4.0.0)",
     "lime (>=0.2.0.1,<0.3.0.0)",
-    "imbalanced-learn (>=0.14.1,<0.15.0)"
+    "imbalanced-learn (>=0.14.1,<0.15.0)",
+    "eli5 (>=0.16.0,<0.17.0)"
 ]
 
 
