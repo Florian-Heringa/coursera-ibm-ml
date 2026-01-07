@@ -2,4 +2,4 @@
 
 **[Course Link](https://www.coursera.org/professional-certificates/ibm-machine-learning)**
 
-- Datasets are not provided in this repository. They can be obtained from the course.
+- Datasets are not provided in this repository. They can be obtained by following the course.
