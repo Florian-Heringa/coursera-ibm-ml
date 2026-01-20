@@ -1,3 +1,5 @@
 *.lock
 */data
 */files
+
+*/final-project/data
