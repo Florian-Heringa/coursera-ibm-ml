@@ -1,0 +1,390 @@
+\documentclass[10pt,a4paper]{article}
+
+%% Language
+\usepackage[english]{babel}
+
+%% Structures
+%\usepackage{enumerate}
+\usepackage{enumitem}
+
+%% Float modifiers and layout
+\usepackage{float}
+\usepackage[a4paper, left=30mm, top=25mm, right = 20mm, bottom=40mm]{geometry}
+
+%% Mathematics and symbols
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{siunitx}
+\usepackage{bbold}
+% Bold faced vector notation
+\usepackage{bm}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{todonotes}
+
+\title{Coursera - IBM - Unsupervised Learning \\ Spotify Audio Features}
+
+
+% Figures and float commands
+\newcommand{\figcapt}[2]{\begin{minipage}[c]{.9\textwidth}
+						\caption{#1}
+						\end{minipage}
+						}
+
+% Commutator (scaling angle brackets)
+\newcommand{\comm}[1]{\left[ #1 \right]}
+
+% bra and ket 
+\newcommand{\bra}[1]{\left< #1 \right|}
+\newcommand{\ket}[1]{\left| #1 \right>}
+\newcommand{\expval}[1]{\left< #1 \right>}
+\newcommand{\var}[1]{\func{\text{Var}}{#1}}
+
+% Vector and operator definitions
+\newcommand{\uVec}[1]{\bm{\hat{#1}}}
+\newcommand{\op}[1]{\bm{\underline{#1}}}
+\newcommand{\colVecTwo}[2]{\begin{pmatrix}
+{#1} \\ {#2}
+\end{pmatrix}
+}
+\newcommand{\rowVecTwo}[2]{\begin{pmatrix}
+{#1} & {#2}
+\end{pmatrix}
+}
+
+\newcommand{\colVecThree}[3]{\begin{pmatrix}
+{#1} \\ {#2} \\ {#3}
+\end{pmatrix}
+}
+\newcommand{\rowVecThree}[3]{\begin{pmatrix}
+{#1} & {#2} & {#3}
+\end{pmatrix}
+}
+
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
+\newcommand{\lgr}[1]{\mathcal{L}\left( #1\right)}
+\newcommand{\lgrlone}{\mathcal{L}}
+\newcommand{\ddt}{\frac{\diff}{\diff t}}
+\newcommand{\ddx}[1]{\frac{\diff}{\diff #1}}
+\newcommand{\papb}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\papbt}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+\newcommand{\dadb}[2]{\frac{\diff #1}{\diff #2}}
+\newcommand{\dadbt}[2]{\frac{\diff^2 #1}{\diff #2^2}}
+\newcommand{\func}[2]{#1\left(#2\right)}
+\newcommand{\ten}[1]{$\cdot10^{#1}$}
+\newcommand{\tenm}[1]{\cdot10^{#1}}
+
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\abssq}[1]{\abs{#1}^2}
+\newcommand{\?}{\stackrel{?}{=}}
+\newcommand{\parenth}[1]{\left( #1 \right)}
+
+\newcommand{\units}[1]{\left[ #1 \right]}
+\newcommand{\millerv}[1]{$\left[#1\right]$}
+\newcommand{\millervf}[1]{$\left\langle #1\right\rangle$}
+\newcommand{\millervfm}[1]{\left\langle #1\right\rangle}
+\newcommand{\millerp}[1]{$\left(#1\right)$}
+\newcommand{\millerpf}[1]{$\left\{#1\right\}$}
+
+% \renewcommand\thesection{Ch. }
+% \renewcommand\thesubsection{Ex. }
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+
+I have chosen the \href{https://www.kaggle.com/datasets/amitanshjoshi/spotify-1million-tracks}{Kaggle Spotify Audio Features dataset} for my final project.
+
+This dataset contains lots of information about track in the form of "Audio Features". These are characteristics of music defined by Spotify that tell something about a specific property of the music. For example, "Acousticness" is a measure of how much the music contains acoustic instruments, as opposed to electronic instruments. "Danceability" and "Energy" are two other measures which seem related, but encode different types of energy in a track. More information about the meaning of the audio features can be found on the \href{https://developer.spotify.com/documentation/web-api/reference/get-audio-features}{Spotify Developer Website}
+
+\subsection{Project Goal}
+
+The dataset contains a column with the genre of the track. However, I am interested in looking at whether genre is actually a good measure of where a track belongs in the Audio Feature space. Supervised learning was used to group similar songs together based on audio features. Since advanced clustering methods can be slow, I will also reduce the dimensionality of the feature space as much as possible using PCA. As we will also see, there is some redundancy in the audio features due to correlations.
+It is unlikely that direct genres can be recovered from the audio features as different genres can often have similar audio feature parametrization, but it's expected that some clear groups of similarly classifiable tracks emerge.
+
+\subsection{Models}
+
+The following unsupervised learning methods were used:
+
+\begin{itemize}
+    \item PCA is used for dimensionality reduction
+    \item Gaussian Mixtures are used for grouping similar tracks together
+    \item HDBSCAN for verifying the results of GMM. 
+\end{itemize}
+
+Reducing the dimensionality helps with model fitting, the dataset is very large (>1.000.000 rows) and as such will take a lot of computing power. Reducing the dimensionality by a few components will already help a lot for model selection iteration. As we will see, the data does not contain any natural clusters. Therefore I have chosen GMM to interpret latent features and soft clusters. Relating these back to the original data will give some insight into how tracks group together based on audio features.
+
+Finally, for additional interpretability I will use HDBSCAN to verify the results. I attempted to use an agglomerative model, which would have been interesting since it builds clusters by combining similar subclusters, something that sounds like it would fit a dataset of music properties. But I ran into scaling issues where the amount of memory was too much for my system to handle. Another attempt was made with Factor Analysis, but it seems this dataset is not suited for this analysis, as I ran into numerical issues during the fitting. There is likely a way to make factor analysis work for this dataset, but since that is not aligned with the goal of this report that will have to be postponed.
+
+\subsection{Data Description}
+
+The full dataset contains 1.159.764 rows with 20 features
+
+\begin{itemize}
+    \item 'id' $\rightarrow$ Int
+    \item 'artist\_name' $\rightarrow$ String
+    \item 'track\_name' $\rightarrow$ String
+    \item 'track\_id' $\rightarrow$ String
+    \item 'popularity' $\rightarrow$ Int
+    \item 'year' $\rightarrow$ Int
+    \item 'genre' $\rightarrow$ String
+    \item 'acousticness' $\rightarrow$ Float
+    \item 'danceability' $\rightarrow$ Float
+    \item 'duration\_ms' $\rightarrow$ Int
+    \item 'energy' $\rightarrow$ Float
+    \item 'instrumentalness' $\rightarrow$ Float
+    \item 'key' $\rightarrow$ Int
+    \item 'liveness' $\rightarrow$ Float
+    \item 'loudness' $\rightarrow$ Float
+    \item 'mode' $\rightarrow$ Int
+    \item 'speechiness' $\rightarrow$ Float
+    \item 'tempo' $\rightarrow$ Float
+    \item 'time\_signature' $\rightarrow$ Int
+    \item 'valence' $\rightarrow$ Float
+\end{itemize}
+
+In this analysis we'll restrict ourselves to the actual audio feature columns (acousticness, danceability, energy, instrumentalness, liveness, speechiness, valence), leaving 7 features to consider.
+
+First we will perform EDA to see if there are any major issues with the data that need to be addressed.
+
+Then we will investigate how much these features cover the variance of the data by performing PCA. It might be that some features are redundant or capture similar properties. 
+
+Then we use a gaussian mixture model to investigate which clusters are present in the data.
+
+Finally hierarchical clustering is used to find out the process of clustering.
+
+\section{EDA and preprocessing}
+
+The data was investigated and no null or nan values were present. The audio features were already mostly within the 0.0-1.0 range, but to be sure they were all scaled to that exact range by using the MinMaxScaler.
+
+The distribution of artists and genres was checked to identify if any were represented in a unbalanced manner. For the artists it seemed that there was a lot of traditional and classical music and a lot of electronic dance music, but the largest value ("Traditional" at 4058 occurrences) only consisted of 0.3\% of the dataset.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\linewidth]{1-artist-distribution.png}
+    \caption{The distribution of the 10 most represented artists.}
+    \label{fig:artists}
+\end{figure}
+
+The genres were plotted (see below) to discover that the most represented genre was "Black-Metal" at 1.7\% of the dataset.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{2-genre-distribution.png}
+    \caption{The distribution of genres in the dataset.}
+    \label{fig:genres}
+\end{figure}
+
+In both cases this does not represent a significant skew towards a specific genre or artist.
+
+A pairplot was also made, which shows that no immediately identifiable clusters exist. There is some skew in the data with instrumentalness and acousticness tending towards low values. No steps were taken to remedy this.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{3-initial-pairplot.png}
+    \caption{The pairplot for the scaled audio features.}
+    \label{fig:init-pair}
+\end{figure}
+
+The pairplot does not give any meaningful insight in what types of correlations we can expect. At least when plotting the data on a 2D projection to the feature axes, we can't see any clustering. 
+
+The only thing that can be glanced from the above plot is
+\begin{itemize}
+    \item High speechiness is unlikely to go with middle levels of instrumentalness.
+    \item High speechiness is unlikely to go with low danceability.
+\end{itemize}
+
+Which both seem to make intuitive sense from a music perspective. The rest of the data seems to be relatively uniformly distributed throughout the feature space.
+
+From the correlation matrix we can see that some of the features have moderate to high correlations, specifically:
+
+\begin{itemize}
+    \item (0.52) Valence/Danceability
+    \item (-0.75) Acousticness/Energy
+\end{itemize}
+
+So a lot of high energy songs will likely have a positive sentiment (high valence) and many acoustic songs will likely be low energy.
+
+From this it looks like there is an opportunity for dimensionality reduction. Since no clear grouped data points in the form of identifiable clusters were present in the data we can probably get away with taking a lower variance threshold if that means taking fewer components. Later we will be using Gaussian Mixtures to find similarity between groups of points which can be slow on large datasets. Since this is mostly a model that already provides more nuance by yielding probabilities instead of hard class labels, we can do away with some more variance if this means being able to iterate model selection quicker.
+
+\section{PCA for dimensionality reduction}
+
+By fitting a PCA model it was possible to remove 2 features at the cost of 6.2\% variance. The resulting components are shown below:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{5-pca-reduced-features.png}
+    \caption{The reduced feature space for the dataset after removing 2 components to retain 93.8\% variance.}
+    \label{fig:pca_features}
+\end{figure}
+
+From this we can see that there is still no clear clustering visible in this dataset. This is likely due to the fact that different types of music often span large ranges of values for music features and as such will overlap in the feature space. A soft clustering method like GMM might be able to reveal latent groupings (indirectly observable clusters) by allowing probabilistic cluster membership.
+
+\section{Gaussian Mixtures for audio feature grouping}
+
+We'll use the previously obtained dimensionality reduced features as input for the Gaussian Mixture model. This clustering method will fit a preselected amount of Gaussians to the data and attempt to assign cluster membership probabilities to each data point. Because there is no apparent best choice for the number of components, we'll use model selection for GMM provided by sklearn.
+
+This works by using grid search with a GMM model and providing the following parameters:
+\begin{itemize}
+    \item n\_components
+    \item covariance\_type
+    \item scoring = gmm\_bic\_score
+\end{itemize}
+
+Where the scoring method is the "Bayesian Information Criterion" (BIC), which is defined as $\text{BIC } = k \ln(n) - 2 \ln(\hat{L})$, where $k$ is the number of parameters in the model, $n$ is the number of data points and $\hat{L}$ is the maximized value of the likelihood function of the model. The goal of this scoring criterion is to avoid overfitting by keeping the number of parameters low. This is similar to using regularization in regression models, but with the number of parameters instead of the size of the parameters.
+
+However, before fitting the model, we need to standardize the dataset to improve the accuracy of the model. We'll do this by applying `sklearn.preprocessing.StandardScaler`.
+
+By applying gridsearch with to find the best parameters it became clear that there is no natural clustering in the data. As can be seen from the gridsearch results below, the 'full' covariance description yielded the best fits for the GMM model. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{6-gmm-gs-results.png}
+    \caption{Gridsearch results for GMM models with different types of covariance representations.}
+    \label{fig:gmm-gs}
+\end{figure}
+
+And though the BIC score went down with increasing number of components, there is little advantage over adding more components. Especially since there is no clear point of diminishing returns and adding components will harm the interpretability of the model.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{7-gmm-gs-bic.png}
+    \caption{BIC curve for different amounts of components in GMM gridsearch fit.}
+    \label{fig:gmm-bic}
+\end{figure}
+
+From this we can conclude that the musical features as defined by spotify are not good predictors of musical genre as classically defined, which is something we already saw during EDA. However, we can try to see if another set of musical archetypes naturally appears from the analysis.
+
+\section{GMM as archetype descriptor}
+
+To keep the model interpretable and attempt to keep maximal separation between Gaussian clusters, 5 Gaussians were chosen as cluster basis. The BIC score, while decreasing, never hit a meaningful minimum, and interpretability and insight is more interesting in this case than exact clustering, which is something that this type of dataset does not allow for in any case.
+
+By fitting a new GMM with 5 clusters the pairplot below can be generated. Which shows that there are clear correlations between clusters, but that there are no clearly defined boundaries in all dimensions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{8-clustered-pairplot.png}
+    \caption{Pairplot of the audio features dataset, colored by cluster index.}
+    \label{fig:cluster-pair}
+\end{figure}
+
+\subsection{Interpretation}
+
+We can plot the cluster means from each Gaussian to interpret the meaning by inspecting which audio features are important for each cluster.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\linewidth]{9-gmm-cluster-means.png}
+    \caption{Cluster means for each Gaussian}
+    \label{fig:gmm-cluster-means}
+\end{figure}
+
+From this we can see that each cluster captures different proportions of each feature. Probably the most pronounced and easily interpretable is cluster 2, with high energy, instrumentalness and danceability and low acousticness and will likely contain lot of electronic dance music. For each cluster the defining features are:
+
+\begin{itemize}
+    \item \textbf{Cluster 0} = Low liveness, instrumentalness and speechiness. Average on all others
+    \item \textbf{Cluster 1} = High acousticness and instrumentalness. Low speechiness.
+    \item \textbf{Cluster 2} = High energy, instrumentalness and danceability. Low speechiness and acousticness.
+    \item \textbf{Cluster 3} = High energy danceability. Low instrumentalness.
+    \item \textbf{Cluster 4} = High energy, danceability. Low speechiness, acousticness, instrumentalness.
+\end{itemize}
+
+For each of the clusters we can check the most common artist and genre within the cluster.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{10-gmm-artists-per-cluster.png}
+    \caption{Artists per cluster, ranked by count}
+    \label{fig:gmm-art-per-cl}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{11-gmm-genre-per-cluster.png}
+    \caption{Genre per cluster, ranked by count}
+    \label{fig:gmm-genre-per-cl}
+\end{figure}
+
+With this we can interpret the clusters more informatively as:
+
+\begin{itemize}
+    \item \textbf{Cluster 0}: Rhythmic \& Upbeat Popular. Includes salsa, gospel, Brazilian and other popular world music genres.
+    \item \textbf{Cluster 1}: Acoustic and Ambient Instrumental. Classical music, instrumental guitar and new-age.
+    \item \textbf{Cluster 2}: High-Energy Electronic and Metal. EDM, death-metal and other high energy tracks with few vocals.
+    \item \textbf{Cluster 3}: Expressive Vocal \& Performance. Comedy, Samba, 
+    \item \textbf{Cluster 4}: High-Energy Alternative \& Hip-Hop. Alternative rock type music and hip-hop with high energy.
+\end{itemize}
+
+Interestingly, cluster 0 and 3 seem to capture much of the same genres. The main distinction here seems to lie in speechiness and liveness. This is probably because much of this music is meant to be enjoyed live and likely distributed as live albums. This also makes it more likely to contain spoken sections since the artist may be adressing the crowd.
+
+\section{Model Validation with HDBSCAN}
+
+DBSCAN is a density based clustering method that finds sections of high density and clusters them together. Since this dataset is quite high density and covers the feature space widely, a density based method is useful here since it is sensitive to local variations in the number of points close together. By using HDBSCAN (Hierarchical DBSCAN), it is possible to eliminate a section of hyperparameter selection by having the model find a good value for $\epsilon$ (the neighborhood parameter). 
+An exploratory HDBSCAN clustering was performed with min\_cluster\_size=5000 and min\_samples=20. This resulted in only 3 clusters being found with the following distribution:
+
+\begin{itemize}
+    \item \textbf{-1}: 577914
+    \item \textbf{0}: 50492
+    \item \textbf{1}: 481789
+    \item \textbf{2}: 49569
+\end{itemize}
+
+Where "-1" means that the point could not reliably be clustered and was designated as noise.
+
+The AMI score was calculated to find the overlap between the HDBSCAN and GMM results, which came out to 0.535. This shows good agreement in how the distribution of these clusters is between methods. A second HDBSCAN fit was performed with smaller cluster sizes to probe a slightly finer structure and try to recover the 5 clusters from the original data. This was mostly done because approximately half the dataset was dropped as noise.
+
+Because this seemed to miss some of the subtleties from the dataset, another attempt was done by tweaking the minimum cluster size to 2000. By doing this we were able to recover 4 clusters with good correspondence to the results from the Gaussian Model with an AMI score of 0.56. The mean values of each of the audio features of the clusters found by HDBSCAN are shown below.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{12-hdbs-cluster-means.png}
+    \caption{Audio Feature means of the clusters found by HDBSCAN.}
+    \label{fig:hdbs-cluster-means}
+\end{figure}
+
+Where we can again get the most represented artists and genres for each cluster.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{13-hdbs-artists-per-cluster.png}
+    \caption{Most represented artist per HDBSCAN cluster.}
+    \label{fig:hdbs-artists}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{14-hdbs-genre-per-cluster.png}
+    \caption{Most represented artist per HDBSCAN cluster.}
+    \label{fig:hdbs-genres}
+\end{figure}
+
+From this we can see that the combination of features largely correlates with the clusters found earlier with GMM. The following clusters can be identified:
+\begin{itemize}
+    \item \textbf{0} - Expressive Vocal \& Performance. Comedy, Samba. (Corresponding to cluster 3 from the GMM model).
+    \item \textbf{1} - High-Energy Electronic and Metal. EDM, death-metal and other high energy tracks with few vocals. (Corresponding to Cluster 2 from the GMM model)
+    \item \textbf{2} - Popular music, easy to listen to. (Has fewer direct correspondence with GMM, but contains features from both GMM cluster 0 and cluster 4)
+    \item \textbf{3} - Acoustic and Ambient Instrumental. Classical music, instrumental guitar and new-age. (Corresponding to cluster 1 from the GMM model.)
+\end{itemize}
+
+There is good overall agreement with the two methods, as also indicated by the AMI score of 0.56. One thing to note is that HDBS cluster 0 is very small. So the distinction here is not as clear as desired. In the GMM clusters this was also the smallest cluster (byt a much smaller margin) but this might be instructive for further research. It would be interesting to see which tracks were not able to be classified by the HDBS method (approximately half the dataset was not assigned to a cluster) and to see if performance increases with more detailed feature selection or hyperparameter tuning.
+
+\section{Summary and Reflection}
+
+Since this analysis was only applied to a small subset of tracks available on Spotify, there are large groups of music types and representation missing. However, the form of the analysis is still insightful. By using PCA to remove two of the features we can significantly reduce the dimensionality of the audio features space while keeping approximately 93\% of the variance. This suggests that there is some redundancy in the way these are defined and that audio features are correlated. This also follows from a correlation matrix which indicates that danceability/valence and acousticness/energy are correlated.
+
+Next we clustered the data using Gaussian Mixtures and found that there is no natural clustering of this dataset. However, using 5 clusters (chosen to keep interpretability as high as possible), we see that the data splits up into meaningfully distinct archetypes which also enlighten why some of the audio features had moderate to high correlation.
+
+Finally a separate analysis was done with HDBSCAN to validate the clusters found with GMM. This analysis largely agreed with the GMM results and showed that a few archetypes clearly emerge. Though much of the data was not able to be classified by the HDBS method and more research would be required to make a definitive comparison.
+
+\subsection{Next Steps}
+
+The result that audio features collapse into clear archetypes of music is clear. However, how this distinction is best made is not fully clear yet. Different clustering methods give slightly different results and would require more investigation to determine if a definitive clustering method is possible based on Spotify Audio Features. For this I would recommend finding hyperparameters that would allow HDBSCAN to cluster more of the available data (together with investigating what the reason could be that a large subset of the data could not be classified). 
+
+Another option is to add more of the available features that are not Spotify Audio Features. For example, I suspect that adding the tempo of the track would already split up some of the clusters. The same goes for the time signature since western pop music often has a 4/4 time signature and music from other cultures tends to have more variability there.
+
+\end{document}
