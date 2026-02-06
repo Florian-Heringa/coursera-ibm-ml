@@ -38,6 +38,8 @@ dependencies = [
     "folium (>=0.20.0,<0.21.0)",
     "matplotlib (>=3.10.8,<4.0.0)",
     "factor-analyzer (>=0.5.1,<0.6.0)",
+    "keras (>=3.13.2,<4.0.0)",
+    "tensorflow (>=2.20.0,<3.0.0)",
 ]
 
 
