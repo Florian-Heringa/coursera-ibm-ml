@@ -6,7 +6,7 @@ authors = [
     {name = "Florian-Heringa",email = "florian_music@hotmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "pandas (>=2.3.3,<3.0.0)",
     "ipykernel (>=7.1.0,<8.0.0)",
@@ -29,7 +29,6 @@ dependencies = [
     "imbalanced-learn (>=0.14.1,<0.15.0)",
     "eli5 (>=0.16.0,<0.17.0)",
     "pillow (>=12.0.0,<13.0.0)",
-    "polars (>=1.36.1,<2.0.0)",
     "altair (>=6.0.0,<7.0.0)",
     "opencv-python (>=4.12.0.88,<5.0.0.0)",
     "pyarrow (>=22.0.0,<23.0.0)",
@@ -39,10 +38,16 @@ dependencies = [
     "matplotlib (>=3.10.8,<4.0.0)",
     "factor-analyzer (>=0.5.1,<0.6.0)",
     "keras (>=3.13.2,<4.0.0)",
-    "tensorflow (>=2.20.0,<3.0.0)",
+    "polars (>=1.39.3,<2.0.0)",
+    "tensorflow (>=2.21.0,<3.0.0)",
+    "mlxtend (>=0.24.0,<0.25.0)",
+    "torch (>=2.11.0,<3.0.0)",
+    "torchvision (>=0.26.0,<0.27.0)",
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
