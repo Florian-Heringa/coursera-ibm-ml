@@ -13,3 +13,7 @@
 4. [Unsupervised Learning](./4-unsupervised-learning/final-project/coursera_ibm_unsupervised_260120.pdf) -> Spotify Audio Features
 5. [Deep Learning and Reinforcement Learning]() -> TODO
 6. [Capstone]() -> TODO
+
+### Issues
+
+1. Installation of *h5py* with poetry: if it does not work through poetry, try to install with `poetry run pip install h5py==3.14`
