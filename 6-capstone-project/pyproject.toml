@@ -1,0 +1,30 @@
+[project]
+name = "ibm-ml-capstone"
+version = "0.1.0"
+description = "Environment for the Coursera ML Capstone course by IBM"
+authors = [
+    {name = "Florian-Heringa",email = "florianheringa@gmail.com"}
+]
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "nltk (>=3.9.4,<4.0.0)",
+    "wordcloud (>=1.9.6,<2.0.0)",
+    "gensim (>=4.4.0,<5.0.0)",
+    "ipykernel (>=7.2.0,<8.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "scikit-learn (>=1.8.0,<2.0.0)",
+    "scikit-surprise (>=1.1.4,<2.0.0)",
+    "numpy (<2.0.0)",
+    "pandas (<3.0)",
+    "streamlit (>=1.56.0,<2.0.0)",
+    "streamlit-aggrid (>=1.2.1.post2,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
